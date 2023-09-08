@@ -11,7 +11,7 @@ public class Git {
         File f_objects = new File("./objects");
         if (!f_objects.exists())
             f_objects.mkdirs();
-        File f_index = new File("./objects/index");
+        File f_index = new File("index");
         if (!f_index.exists())
             f_index.createNewFile();
     }
