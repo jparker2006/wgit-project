@@ -20,7 +20,7 @@ public class Blob {
         file.createNewFile();
     }
 
-    public String hashString(String sToBeHashed) {
+    public static String hashString(String sToBeHashed) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             byte[] messageDigest = md.digest(sToBeHashed.getBytes());
