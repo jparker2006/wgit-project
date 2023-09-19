@@ -20,17 +20,18 @@ public class Blob {
         file.createNewFile();
     }
 
-    public String hashString(String sToBeHashed) {
+    public static String hashString(String sToBeHashed) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             byte[] messageDigest = md.digest(sToBeHashed.getBytes());
-            BigInteger nBigInt = new BigInteger(1, messageDigest);
-            String sHash = nBigInt.toString(16);
-            while (sHash.length() < 32) {
-                sHash = "0" + sHash;
+            BigInteger no = new BigInteger(1, messageDigest);
+            String hashtext = no.toString(16);
+            while (hashtext.length() < 32) {
+                hashtext = "0" + hashtext;
             }
-            return sHash;
-        } catch (NoSuchAlgorithmException e) {
+            return hashtext;
+        }
+        catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
