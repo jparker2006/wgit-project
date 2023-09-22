@@ -1,6 +1,5 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -68,12 +67,15 @@ public class Commit
     public String genSha1() throws IOException
     {
         StringBuilder sb = new StringBuilder();
-        BufferedReader br = new BufferedReader(new FileReader("/objects" + "Commit"));
+        BufferedReader br = new BufferedReader(new FileReader("objects/" + "Commit"));
         while (br.ready())
         {
             sb.append(br.readLine());
         }
         br.close();
         return hashString(sb.toString());
+    }
+    public String getShaOfTree() {
+        return shaOfTree;
     }
 }
