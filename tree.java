@@ -10,6 +10,7 @@ import java.util.*;
 
 public class tree{
     private Map <String, String> map;
+    private String sha1;
     public tree () throws IOException
     {
         this.map = new LinkedHashMap<>();
@@ -54,13 +55,17 @@ public class tree{
                 s.append("\n");
             }
         }
-        String sha1 = Blob.hashString(s.toString());
+        sha1 = Blob.hashString(s.toString());
         String fileName = "./objects/" + sha1;
         try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
             for (String entry : map.values()) {
                 writer.println(entry);
             }
         }
+    }
+    public String returnHash()
+    {
+        return sha1;
     }
     public static void main(String[] args) throws IOException {
         tree ex = new tree();
