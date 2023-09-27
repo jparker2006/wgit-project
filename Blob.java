@@ -20,19 +20,25 @@ public class Blob {
         file.createNewFile();
     }
 
-    public static String hashString(String sToBeHashed) {
+    public static String hashString(String sToBeHashed) throws Exception {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-            byte[] messageDigest = md.digest(sToBeHashed.getBytes());
-            BigInteger no = new BigInteger(1, messageDigest);
-            String hashtext = no.toString(16);
-            while (hashtext.length() < 32) {
-                hashtext = "0" + hashtext;
+            MessageDigest md = MessageDigest.getInstance("SHA1");
+            md.update(sToBeHashed.getBytes());
+            byte[] b = md.digest();
+            StringBuffer buf = new StringBuffer();
+            char aHexDigits[] = {
+                '0', '1', '2', '3',
+                '4', '5', '6', '7',
+                '8', '9', 'a', 'b',
+                'c', 'd', 'e', 'f'
+            };
+            for (int i=0; i<16; i++) {
+                buf.append(aHexDigits[(b[i] >> 4) & 0x0f]);
+                buf.append(aHexDigits[b[i] & 0x0f]);
             }
-            return hashtext;
-        }
-        catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            return buf.toString();
+        } catch (Exception e) {
+            throw e;
         }
     }
 

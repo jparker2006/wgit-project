@@ -15,7 +15,7 @@ public class Commit
     private String author;
     private String optionalParent;
     private String shaOfTree;
-    public Commit(String summary, String author, String optionalParent) throws IOException
+    public Commit(String summary, String author, String optionalParent) throws Exception
     {
         createTree();
         File f = new File("objects/" + "Commit");
@@ -38,7 +38,7 @@ public class Commit
         fw.write(summary);
         fw.close();
     }
-    public void createTree() throws IOException
+    public void createTree() throws Exception
     {
         tree tree = new tree();
         tree.toFile();

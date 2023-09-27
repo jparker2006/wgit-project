@@ -31,7 +31,7 @@ public class BlobTest {
     }
 
     @Test
-    void testHashString() {
+    void testHashString() throws Exception {
         assertEquals("86f7e437faa5a7fce15d1ddcb9eaeaea377667b8", Blob.hashString("a"));
     }
 }
