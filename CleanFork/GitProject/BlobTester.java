@@ -21,6 +21,7 @@ public class BlobTester {
     }
 
     @Test
+    @DisplayName("Test that blobs are constructing.")
     void testConstructor() throws Exception {
         assertTrue(Utils.exists("objects/65b8e639498af65675883d6cd6ab3c0aaf984f1a"));
     }

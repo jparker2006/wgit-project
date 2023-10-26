@@ -2,7 +2,7 @@ import java.util.*;
 import java.io.*;
 
 public class Git {
-    protected HashMap<String, String> hm;
+    private HashMap<String, String> hm;
     public Git() {
         hm = new HashMap<String, String>();
     }
@@ -29,7 +29,7 @@ public class Git {
             writeToIndex();
         }
         else
-            System.out.println("file does not exist");
+            System.out.println("File does not exist.");
     }
 
     public void writeToIndex() throws Exception {
