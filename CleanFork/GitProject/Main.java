@@ -2,11 +2,15 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("Hello world");
         try {
-            // Git index = new Git();
-            // Utils.writeFile("Test.txt", "This is file contents.");
-            // index.addBlob("Test.txt");
+            Git git = new Git();
+            git.initialize();
 
-            Tree t = new Tree();
+            Utils.writeFile("dir/file1.txt", "file1");
+            Utils.writeFile("dir/file2.txt", "file2");
+            Utils.writeFile("dir/file3.txt", "file3");
+
+            Tree tree = new Tree();
+            tree.addDirectory("dir");
 
         }
         catch (Exception e) {}

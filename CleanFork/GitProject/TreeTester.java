@@ -2,6 +2,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.AfterAll;
@@ -18,6 +20,9 @@ public class TreeTester {
         Utils.writeFile("Test1.txt", "A"); // 6dcd4ce23d88e2ee9568ba546c007c63d9131c1b
         Utils.writeFile("Test2.txt", "B"); // ae4f281df5a5d0ff3cad6371f76d5c29b6d953ec
         Utils.writeFile("Test3.txt", "C"); // 32096c2e0eff33d844ee6d675407ace18289357d
+
+        Git git = new Git();
+        git.initialize();
     }
 
     @AfterAll
@@ -107,4 +112,46 @@ public class TreeTester {
             "tree : e7d79898d3342fd15daf6ec36f4cb095b52fd976"
         );
     }
+
+    @Test
+    @DisplayName("Test add directory basic.")
+    void testAddDirectoryBasicExample() throws Exception {
+        Utils.deleteDirectory("objects");
+        Utils.deleteDirectory("dir");
+
+        Utils.writeFile("dir/file1.txt", "A");
+        Utils.writeFile("dir/file2.txt", "B");
+        Utils.writeFile("dir/file3.txt", "C");
+
+        Tree tree = new Tree();
+        tree.addDirectory("dir");
+        tree.toFile();
+
+        String contents = Utils.readFile("objects/" + Utils.hashString(tree.stringify()));
+        assertTrue(contents.contains("dir/file1.txt"));
+        assertTrue(contents.contains("6dcd4ce23d88e2ee9568ba546c007c63d9131c1b"));
+    }
+
+    @Test
+    @DisplayName("Test add directory advanced.")
+    void testAddDirectoryAdvanced () throws Exception {
+        Utils.deleteDirectory("objects");
+        Utils.deleteDirectory("dir");
+
+        Utils.writeFile("dir/file1.txt", "A");
+        Utils.writeFile("dir/file2.txt", "B");
+        Utils.writeFile("dir/file3.txt", "C");
+
+        Utils.createFolder("dir/subdir1");
+        Utils.writeFile("dir/subdir2/file4.txt", "D");
+
+        Tree tree = new Tree();
+        tree.addDirectory("dir");
+        tree.toFile();
+
+        String contents = Utils.readFile("objects/" + Utils.hashString(tree.stringify()));
+        assertTrue(contents.contains("dir/file1.txt"));
+        assertTrue(contents.contains("dir/subdir1"));
+        assertTrue(contents.contains("be0974336796cee8e4e51fcc1d02d2c6583d9181"));
+    } 
 }

@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
@@ -40,28 +41,25 @@ public class Tree {
     public LinkedHashMap<String, String> getHM() {
         return this.map;
     }
-/*
+    
     public void addDirectory(String sDirectoryPath) throws Exception {
         File f_directory = new File(sDirectoryPath);
         if (!f_directory.isDirectory())
             throw new Exception("Invalid pathing");
         File[] af_FileLS = f_directory.listFiles();
         for (File f: af_FileLS) {
-            if (f.isDirectory()) {
-                tree t = new tree();
-                String sPath = f.getPath();
-                t.addDirectory(sPath);
-                String sTreeHash = t.getHash();
-                this.add("tree : " + sTreeHash + " : " + sPath);
+            if (f.isFile()) {
+                String filePath = sDirectoryPath + "/" + f.getName();
+                Blob b = new Blob (filePath);
+                add("blob : " + b.getHash() + " : " + filePath);
             }
-            else {
-                String sFilePath = sDirectoryPath + "/" + f.getName();
-                Blob blob = new Blob(sFilePath);
-                this.add("blob : " + blob.getHash() + " : " + sFilePath);
+            else if (f.isDirectory()) { 
+                Tree childTree = new Tree();
+                String sTempPath = f.getPath();
+                childTree.addDirectory(sTempPath);
+                childTree.toFile();
+                add("tree : " + Utils.hashString(childTree.stringify()) + " : " + sTempPath);
             }
         }
     }
-
-
-    */
 }

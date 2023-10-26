@@ -76,4 +76,14 @@ public class Utils {
         fw.write(content);
         fw.close();
     }
+
+    public static void createFolder(String path) throws IOException {
+        Path pathObject = Paths.get(path);
+
+        if (pathObject.getParent() != null) {
+            Files.createDirectories(pathObject.getParent());
+        }
+
+        Files.createDirectories(pathObject);
+    }
 }
