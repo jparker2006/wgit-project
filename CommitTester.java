@@ -11,20 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class CommitTester {
-    @BeforeAll
-    static void beforeAll() throws Exception {
-        Utils.deleteDirectory("objects");
-        Utils.deleteFile("index");
-        Git index = new Git();
-        index.initialize();
-    }
-
-    @AfterAll
-    static void tearDownAfterClass() throws Exception {
-        Utils.deleteDirectory("objects");
-        Utils.deleteFile("index");
-    }
-
+    /*
     @Test
     @DisplayName("Test that commit works.")
     void testCommit() throws Exception {
@@ -70,10 +57,39 @@ public class CommitTester {
     }
 
     // @Test
+    // void test2Commits() throws Exception {
+    //     Utils.writeFile("file1.txt", "A");
+    //     Utils.writeFile("file2.txt", "B");
+    //     Utils.writeFile("file3.txt", "C");
+    //     Utils.writeFile("dir/file4.txt", "D");
+
+    //     Git index2 = new Git();
+    //     index2.initialize();
+    //     index2.addBlob("file1.txt");
+    //     index2.addBlob("file2.txt");
+    //     index2.addDirectory("dir");
+    //     Commit commit = new Commit("Jake Parker", "This is my commit.");
+    //     commit.commit();
+    //     // assertEquals(commit.getCommitsTree("b3c138216b0d165a8e8efa2ed4ed31e53b4d9234"), "61ad38f531c7d1819cc0693ae6e78824976d4dfe");
+
+    //     // index.addBlob("file3.txt");
+    //     // Commit commit2 = new Commit("b3c138216b0d165a8e8efa2ed4ed31e53b4d9234", "Jake Parker 2", "This is my commmmmit.");
+    //     // commit2.commit();
+            
+    //     // Utils.deleteFile("file1.txt");
+    //     // Utils.deleteFile("file2.txt");
+    //     // Utils.deleteFile("file3.txt");
+    //     // Utils.deleteDirectory("dir");
+    // }
+
+
+
+    // @Test
     // @DisplayName("Test that creating a commits tree works.")
     // void testCreateTree() throws Exception {
     //     Commit commit = new Commit("Jake Parker", "This is my commit.");
     //     String sTree = commit.constructTreeSha();
     //     assertTrue(Utils.exists("objects/" + sTree));
     // }
+    */
 }

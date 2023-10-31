@@ -1,111 +1,155 @@
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.Blob;
 import java.util.LinkedHashMap;
 
-import org.jcp.xml.dsig.internal.dom.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import apple.laf.JRSUIUtils.Tree;
-
 public class TreeTester {
-    private static String sFile = "input.txt";
-    @Test
-    @DisplayName("Testing add")
-    void TreeAdd() throws Exception {
-        tree tree = new tree();
-        String t1 = "tree : bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b";
-        String t2 = "blob : 640ab2bae07bedc4c163f679a746f7ab7fb5d1fa : input.txt";
-        tree.add(t1);
-        tree.add(t2);
-        assertTrue("Add is not working", tree.getContents().contains(t1) && tree.getContents().contains(t2));
+    @BeforeAll
+    static void beforeAll() throws Exception {
+        Utils.deleteDirectory("objects");
+        Utils.deleteFile("index");
+
+        Utils.writeFile("Test1.txt", "A"); // 6dcd4ce23d88e2ee9568ba546c007c63d9131c1b
+        Utils.writeFile("Test2.txt", "B"); // ae4f281df5a5d0ff3cad6371f76d5c29b6d953ec
+        Utils.writeFile("Test3.txt", "C"); // 32096c2e0eff33d844ee6d675407ace18289357d
+
+        Git git = new Git();
+        git.initialize();
+    }
+
+    @AfterAll
+    static void tearDownAfterClass() throws Exception {
+        Utils.deleteDirectory("objects");
+        Utils.deleteFile("index");
+
+        Utils.deleteFile("Test1.txt");
+        Utils.deleteFile("Test2.txt");
+        Utils.deleteFile("Test3.txt");
     }
 
     @Test
-    void TreeRemove() throws Exception {
-        tree tree = new tree();
-        String t1 = "tree : bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b";
-        String t2 = "blob : 640ab2bae07bedc4c163f679a746f7ab7fb5d1fa : input.txt";
-        tree.add(t1);
-        tree.add(t2);
-        tree.remove("input.txt");
-        assertFalse ("Did not remove file", tree.getContents().contains(t2));
-        tree.remove("640ab2bae07bedc4c163f679a746f7ab7fb5d1fa");
-        assertFalse ("Did not remove tree ", tree.getContents().contains(t1));
-    }
+    @DisplayName("Test that tree can add a file.")
+    void testAdd() throws Exception {
+        Tree tree = new Tree();
 
-    @Test
-    void TreeWriteToFile() throws Exception {
-        tree tree = new tree();
-        tree.add("blob : 640ab2bae07bedc4c163f679a746f7ab7fb5d1fa : input.txt");
+        // Incorrect format
+        assertThrows(Exception.class, () -> {
+            tree.add("Foobar");
+        });
+
+        // No file name for blob
+        assertThrows(Exception.class, () -> {
+            tree.add("blob : 6dcd4ce23d88e2ee9568ba546c007c63d9131c1b");
+        });
+
+        tree.add("blob : 6dcd4ce23d88e2ee9568ba546c007c63d9131c1b : Test1.txt");
+        tree.add("blob : ae4f281df5a5d0ff3cad6371f76d5c29b6d953ec : Test2.txt");
+        tree.add("blob : 32096c2e0eff33d844ee6d675407ace18289357d : Test3.txt");
         tree.add("tree : bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b");
-        String hash = Blob.hashString(tree.getContents());
-        File f_tree = new File ("./objects/" + hash);
-        assertTrue ("Tree does not write to correct SHA file", f_tree.exists());
-        // assertTrue ("Tree Sha file does not contain the correct information", Utils.readFileToString("./objects/" + hash).equals(tree.getContents()));
+        tree.add("tree : e7d79898d3342fd15daf6ec36f4cb095b52fd976");
+
+        // Dupes. Shouldn't do anything
+        tree.add("blob : 6dcd4ce23d88e2ee9568ba546c007c63d9131c1b : Test1.txt");
+        tree.add("tree : bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b");
+
+        LinkedHashMap<String, String> hm = tree.getHM();
+        assertTrue(hm.containsKey("Test1.txt"));
+        assertTrue(hm.containsKey("Test2.txt"));
+        assertTrue(hm.containsKey("Test3.txt"));
+        assertTrue(hm.containsKey("bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b"));
+        assertTrue(hm.containsKey("e7d79898d3342fd15daf6ec36f4cb095b52fd976"));
     }
 
     @Test
-    void TreeTestAddDirectory() throws Exception {
-        File subDir = new File("./test1");
-        subDir.mkdirs();
-        FileWriter fw = new FileWriter("./test1/examplefile1.txt");
-        fw.write("This is example file 1");
-        fw.close();
-        fw = new FileWriter("./test1/examplefile2.txt");
-        fw.write("This is example file 2");
-        fw.close(); 
-        fw = new FileWriter("./test1/examplefile3.txt");
-        fw.write("This is example file 3");
-        fw.close(); 
-        tree t = new tree();
-        t.addDirectory("./test1");
-        String hash = t.getHash();
-        String contents = readFromFile("./objects/" + hash);
-        assertTrue ("tree is missing expected files", contents.contains("./test1/examplefile1.txt"));
+    @DisplayName("Test that tree can remove a file.")
+    void testRemove() throws Exception {
+        Tree tree = new Tree();
+
+        tree.add("blob : 6dcd4ce23d88e2ee9568ba546c007c63d9131c1b : Test1.txt");
+        tree.add("blob : ae4f281df5a5d0ff3cad6371f76d5c29b6d953ec : Test2.txt");
+        tree.add("blob : 32096c2e0eff33d844ee6d675407ace18289357d : Test3.txt");
+        tree.add("tree : bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b");
+        tree.add("tree : e7d79898d3342fd15daf6ec36f4cb095b52fd976");
+
+        tree.remove("Test1.txt");
+        tree.remove("bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b");
+
+        LinkedHashMap<String, String> hm = tree.getHM();
+        assertTrue(!hm.containsKey("Test1.txt"));
+        assertTrue(hm.containsKey("Test2.txt"));
+        assertTrue(hm.containsKey("Test3.txt"));
+        assertTrue(!hm.containsKey("bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b"));
+        assertTrue(hm.containsKey("e7d79898d3342fd15daf6ec36f4cb095b52fd976"));
     }
 
     @Test
-    void TreeTestAdvancedAddDirectory() throws Exception {
-        File subDir = new File("./folder");
-        subDir.mkdir();
-        subDir = new File ("./folder/test2");
-        subDir.mkdir();
-        subDir = new File ("./folder/test3");
-        subDir.mkdir();
-        FileWriter fw = new FileWriter("./folder/examplefile1.txt");
-        fw.write("This is example file 1");
-        fw.close();
-        fw = new FileWriter("./folder/examplefile2.txt");
-        fw.write("This is example file 2");
-        fw.close(); 
-        fw = new FileWriter("./folder/examplefile3.txt");
-        fw.write("This is example file 1");
-        fw.close();
-        fw = new FileWriter ("./folder/test3/tester.txt");
-        fw.write("Tester");
-        fw.close();
-        tree t = new tree();
-        t.addDirectory("./folder");
-        String hash = t.getHash();
-        String contents = readFromFile("./objects/" + hash);
-        assertTrue("Tree doesnt have the files", contents.contains("./folder/examplefile1.txt"));
+    @DisplayName("Test to write the tree.")
+    void testToFile() throws Exception {
+        Tree tree = new Tree();
+        tree.add("blob : 6dcd4ce23d88e2ee9568ba546c007c63d9131c1b : Test1.txt");
+        tree.add("blob : ae4f281df5a5d0ff3cad6371f76d5c29b6d953ec : Test2.txt");
+        tree.add("blob : 32096c2e0eff33d844ee6d675407ace18289357d : Test3.txt");
+        tree.add("tree : bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b");
+        tree.add("tree : e7d79898d3342fd15daf6ec36f4cb095b52fd976");
+        tree.toFile();
+        String sExpectedHashOfTree = "302a128fd767f7d86c8feb521e8247e6645226c9";
+
+        assertTrue(Utils.exists("objects/" + sExpectedHashOfTree));
+        assertEquals(
+            Utils.readFile("objects/" + sExpectedHashOfTree),
+            "blob : 6dcd4ce23d88e2ee9568ba546c007c63d9131c1b : Test1.txt" + "\n" +
+            "blob : ae4f281df5a5d0ff3cad6371f76d5c29b6d953ec : Test2.txt" + "\n" +
+            "blob : 32096c2e0eff33d844ee6d675407ace18289357d : Test3.txt" + "\n" +
+            "tree : bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b" + "\n" +
+            "tree : e7d79898d3342fd15daf6ec36f4cb095b52fd976"
+        );
     }
 
-    public static String readFromFile (String file) throws IOException {
-        BufferedReader br = new BufferedReader (new FileReader (file));
-        StringBuilder sb = new StringBuilder();
-        while (br.ready()) {
-            sb.append((char) br.read());
-        }
-        br.close();
-        return sb.toString(); 
+    @Test
+    @DisplayName("Test add directory basic.")
+    void testAddDirectoryBasicExample() throws Exception {
+        Utils.deleteDirectory("objects");
+        Utils.deleteDirectory("dir");
+
+        Utils.writeFile("dir/file1.txt", "A");
+        Utils.writeFile("dir/file2.txt", "B");
+        Utils.writeFile("dir/file3.txt", "C");
+
+        Tree tree = new Tree();
+        tree.addDirectory("dir");
+        tree.toFile();
+
+        String contents = Utils.readFile("objects/" + Utils.hashString(tree.stringify()));
+        assertTrue(contents.contains("dir/file1.txt"));
+        assertTrue(contents.contains("6dcd4ce23d88e2ee9568ba546c007c63d9131c1b"));
     }
+
+    @Test
+    @DisplayName("Test add directory advanced.")
+    void testAddDirectoryAdvanced () throws Exception {
+        Utils.deleteDirectory("objects");
+        Utils.deleteDirectory("dir");
+
+        Utils.writeFile("dir/file1.txt", "A");
+        Utils.writeFile("dir/file2.txt", "B");
+        Utils.writeFile("dir/file3.txt", "C");
+
+        Utils.createFolder("dir/subdir1");
+        Utils.writeFile("dir/subdir2/file4.txt", "D");
+
+        Tree tree = new Tree();
+        tree.addDirectory("dir");
+        tree.toFile();
+
+        String contents = Utils.readFile("objects/" + Utils.hashString(tree.stringify()));
+        assertTrue(contents.contains("dir/file1.txt"));
+        assertTrue(contents.contains("dir/subdir1"));
+        assertTrue(contents.contains("be0974336796cee8e4e51fcc1d02d2c6583d9181"));
+    } 
 }

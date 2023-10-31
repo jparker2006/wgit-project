@@ -1,81 +1,86 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 
-public class Commit
-{
-    private String summary;
-    private String author;
-    private String optionalParent;
-    private String shaOfTree;
-    public Commit(String summary, String author, String optionalParent) throws Exception
-    {
-        createTree();
-        File f = new File("objects/" + "Commit");
-        FileWriter fw = new FileWriter(f);
-        this.summary = summary;
-        this.author = author;
-        this.optionalParent = optionalParent;
-        fw.write(shaOfTree + "\n");
-        if (optionalParent.equals(""))
-        {
-            fw.write("\n");
-        }
-        else if (!optionalParent.equals(""))
-        {
-            fw.write(optionalParent + "\n");
-        }
-        fw.write("\n");//This is for nextCommit
-        fw.write(author + "\n");
-        fw.write(getDate() + "\n");
-        fw.write(summary);
-        fw.close();
+public class Commit {
+    private String sTreeSha, sParentSha, sChildSha, sAuthor, sDate, sSummary, sCommitSha;
+    public Commit(String sParentSha, String sAuthor, String sSummary) throws Exception {
+        this.sParentSha = sParentSha;
+        this.sChildSha = "";
+        this.sAuthor = sAuthor;
+        this.sDate = getDate();
+        this.sSummary = sSummary;
+        this.sTreeSha = constructTreeSha();
     }
-    public void createTree() throws Exception
-    {
-        tree tree = new tree();
-        tree.toFile();
-        shaOfTree = tree.returnHash();
+
+    public Commit(String sAuthor, String sSummary) throws Exception {
+        this("", sAuthor, sSummary);
     }
-    public Calendar getDate()
-    {
-        Calendar now = GregorianCalendar.getInstance();
-        return now;
+
+    public void commit(Git git) throws Exception {
+        StringBuilder sCommit = new StringBuilder(
+            this.sTreeSha   + "\n" +
+            this.sParentSha + "\n" +
+            this.sAuthor    + "\n" +
+            this.sDate      + "\n" +
+            this.sSummary
+        );
+
+        this.sCommitSha = Utils.hashString(sCommit.toString());
+
+        sCommit.insert(sCommit.indexOf("\n", sCommit.indexOf("\n") + 1), this.sChildSha + "\n");
+        Utils.writeFile("objects/" + this.sCommitSha, sCommit.toString());
+
+        if (!this.sParentSha.isEmpty())
+            updatePreviousCommit(this.sParentSha);
+
+        git.clearIndex();
     }
-    public static String hashString(String sToBeHashed) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-            byte[] messageDigest = md.digest(sToBeHashed.getBytes());
-            BigInteger no = new BigInteger(1, messageDigest);
-            String hashtext = no.toString(16);
-            while (hashtext.length() < 32) {
-                hashtext = "0" + hashtext;
+
+    public static String getDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");  
+        Date date = new Date();  
+        return sdf.format(date);  
+    }
+
+    public String constructTreeSha() throws Exception {
+        Tree tree = new Tree();
+        String sIndex = Utils.readFile("index");
+        String[] aEntries = sIndex.split("\n");
+        for (int i=0; i<aEntries.length; i++) {
+            String sType = Utils.getFirstWordOfString(aEntries[i]);
+            if (sType.equals("blob"))
+                tree.add(aEntries[i]);
+            else if (sType.equals("tree"))
+                tree.addDirectory(Utils.getLastWordOfString(aEntries[i]));
+            else if (sType.equals("*deleted*")) {
+                tree.delete(aEntries[i].split(" ")[1], this.sParentSha);
             }
-            return hashtext;
+            else if (sType.equals("*edited*"))
+                tree.edit(aEntries[i]);
         }
-        catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        tree.toFile();
+        return Utils.hashString(tree.stringify());
     }
-    public String genSha1() throws IOException
-    {
-        StringBuilder sb = new StringBuilder();
-        BufferedReader br = new BufferedReader(new FileReader("objects/" + "Commit"));
-        while (br.ready())
-        {
-            sb.append(br.readLine());
-        }
-        br.close();
-        return hashString(sb.toString());
+
+    public String getCommitSha() {
+        return this.sCommitSha;
     }
-    public String getShaOfTree() {
-        return shaOfTree;
+
+    public String getCommitsTree(String sCommitsHash) throws Exception {
+        String sCommit = Utils.readFile("objects/" + sCommitsHash);
+        return sCommit.substring(0, sCommit.indexOf("\n"));
+    }
+
+    public void updatePreviousCommit(String sParentHash) throws Exception {
+        String sFile = Utils.readFile("objects/" + sParentHash);
+        String[] aSplitFile = sFile.split("\n");
+        aSplitFile[2] = this.sCommitSha;
+        sFile = "";
+        for (int i=0; i<aSplitFile.length; i++) {
+            sFile += aSplitFile[i] + "\n";
+        }
+        sFile = sFile.trim();
+        Utils.writeFile("objects/" + sParentHash, sFile);
     }
 }

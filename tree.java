@@ -1,112 +1,103 @@
 import java.io.File;
-import java.io.FileReader;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.*;
+import java.util.LinkedHashMap;
 
+public class Tree {
+    private LinkedHashMap<String, String> map;
 
-
-public class tree{
-    private Map <String, String> map;
-    private String sha1;
-    public tree () throws IOException
-    {
+    public Tree() throws IOException {
         this.map = new LinkedHashMap<>();
-        // File tree = new File("tree");
-        // tree.createNewFile(); 
-    }
-    public Map <String, String> getMap() {
-        return map;
-    }
-    public void add (String entry) throws IOException
-    {
-        String [] seperator = entry.split (" : ");
-        if (seperator.length >= 2)
-        {
-            String key;
-            if (seperator[0].equals("tree"))
-            {
-                key = seperator[1];
-            }
-            else
-            {
-                key = seperator [2];
-            }
-            map.put(key, entry);
-        }
-    }
-    public void remove (String entry) throws IOException
-    {
-        map.remove(entry);
     }
 
-    public String getHash() throws Exception {
-        String s = this.getContents();
-        this.sha1 = Blob.hashString(s);
-        return this.sha1;
-    }
-    public void toFile() throws Exception
-    {
-        getHash();
-        String fileName = "./objects/" + sha1;
-        try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
-            for (String entry : map.values()) {
-                writer.println(entry);
-            }
+    public void add(String sEntry) throws Exception {
+        String[] args = sEntry.split(" : ");
+        if (args[0].equals("tree")) {
+            if (map.containsKey(args[1])) return;
+            map.put(args[1], sEntry);
         }
+        else if (args.length == 1) { // edit or deletion
+            System.out.println("Here");
+            map.put("CHANGE_KEY", sEntry);
+        }
+        else if (!map.containsKey(args[2])) // blob
+            map.put(args[2], sEntry);
     }
-    public String returnHash()
-    {
-        return sha1;
-    }
-    // public static void main(String[] args) throws Exception {
-    //     tree ex = new tree();
-        
-    //     ex.add("blob : 81e0268c84067377a0a1fdfb5cc996c93f6dcf9f : file1.txt");
-    //     ex.add("blob : 01d82591292494afd1602d175e165f94992f6f5f : file2.txt");
-    //     ex.add("blob : f1d82236ab908c86ed095023b1d2e6ddf78a6d83 : file3.txt");
-    //     ex.add("tree : bd1ccec139dead5ee0d8c3a0499b42a7d43ac44b");
-    //     ex.add("tree : e7d79898d3342fd15daf6ec36f4cb095b52fd976");
-    //     // Save tree data to a file in the 'objects' folder
-    //     ex.toFile();
-    // }
 
-    public void addDirectory(String sDirectoryPath) throws Exception {
+    public void remove (String sEntry) throws Exception {
+        map.remove(sEntry);
+    }
+
+    public void toFile() throws Exception {
+        String sFile = stringify();
+        String sHashOfTree = Utils.hashString(sFile);
+        Utils.writeFile("./objects/" + sHashOfTree, sFile);
+    }
+
+    public String stringify() {
+        StringBuilder s = new StringBuilder();
+        for (String sEntry: this.map.values()) {
+            s.append(sEntry);
+            s.append("\n");
+        }
+        return s.toString().trim();
+    }
+
+    public LinkedHashMap<String, String> getHM() {
+        return this.map;
+    }
+    
+    public String addDirectory(String sDirectoryPath) throws Exception {
+        Tree childTree = new Tree();
         File f_directory = new File(sDirectoryPath);
         if (!f_directory.isDirectory())
             throw new Exception("Invalid pathing");
         File[] af_FileLS = f_directory.listFiles();
         for (File f: af_FileLS) {
-            if (f.isDirectory()) {
-                tree t = new tree();
-                String sPath = f.getPath();
-                t.addDirectory(sPath);
-                String sTreeHash = t.getHash();
-                this.add("tree : " + sTreeHash + " : " + sPath);
+            if (f.isFile()) {
+                String filePath = sDirectoryPath + "/" + f.getName();
+                Blob b = new Blob(filePath);
+                childTree.add("blob : " + b.getHash() + " : " + f.getName());
             }
-            else {
-                String sFilePath = sDirectoryPath + "/" + f.getName();
-                Blob blob = new Blob(sFilePath);
-                this.add("blob : " + blob.getHash() + " : " + sFilePath);
+            else if (f.isDirectory()) { 
+                Tree recursiveChildTree = new Tree();
+                String sTempPath = f.getPath();
+                recursiveChildTree.addDirectory(sTempPath);
+                recursiveChildTree.toFile();
+                add("tree : " + Utils.hashString(recursiveChildTree.stringify()) + " : " + sTempPath);
             }
         }
+        childTree.toFile();
+        String sChildHash = Utils.hashString(childTree.stringify());
+        add("tree : " + sChildHash + " : " + sDirectoryPath);
+        return sChildHash;
     }
 
-    public String getContents() {
-        StringBuilder s = new StringBuilder();
-        int count = map.size ();
-        int curr = 0;
-        for (String v : map.values())
-        {
-            s.append(v);
-            curr++;
-            if (curr < count)
-            {
-                s.append("\n");
+    public void delete(String sPath, String sParentHash) throws Exception {
+        String sFile = Utils.readFile("objects/" + sParentHash);
+        String sParentsIndexTree = sFile.split("\n")[0];
+        String sParentsTreeContents = Utils.readFile("objects/" + sParentsIndexTree);
+        String[] aParentsPaths = sParentsTreeContents.split("\n");
+        for (int i=0; i<aParentsPaths.length; i++) {
+            String sType = Utils.getFirstWordOfString(aParentsPaths[i]);
+            if (sType.equals("blob")) {
+                String sFileName = Utils.getLastWordOfString(aParentsPaths[i]);
+                if (sFileName.equals(sPath)) {
+                    Utils.removeLineInFile("objects/" + sParentsIndexTree, i);
+                    add("*deleted* " + sPath);
+                    return;
+                }
+            }
+            else if (sType.equals("tree")) {
+                // search directory
             }
         }
-        return s.toString();
+        String sGrandparentsHash = sFile.split("\n")[1];
+        if (sGrandparentsHash.isEmpty()) {
+            return;
+        }
+        delete(sPath, sGrandparentsHash);
+    }
+
+    public void edit(String sPath) {
     }
 }

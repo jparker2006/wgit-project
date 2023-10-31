@@ -2,9 +2,9 @@ import java.util.*;
 import java.io.*;
 
 public class Git {
-    protected HashMap<String, String> hm;
+    ArrayList<String> aEntries;
     public Git() {
-        hm = new HashMap<String, String>();
+        aEntries = new ArrayList<>();
     }
 
     public void initialize() throws Exception {
@@ -18,26 +18,40 @@ public class Git {
 
     public void addBlob(String sFilePath) throws Exception {
         Blob blob = new Blob(sFilePath);
-        hm.put(sFilePath, blob.getHash());
+        File file = new File(sFilePath);
+        String sEntry = "blob : " + blob.getHash() + " : " + file.getName();
+         if (!this.aEntries.contains(sEntry)) 
+            this.aEntries.add(sEntry);
         writeToIndex();
     }
 
-    public void deleteBlob(String sFilePath) throws Exception {
-        File f_delFile = new File(sFilePath);
-        if (f_delFile.exists()) {
-            hm.remove(sFilePath);
-            writeToIndex();
-        }
-        else
-            System.out.println("file does not exist");
+    public void addDirectory(String sDirectory) throws Exception {
+        Tree t = new Tree();
+        String sTree = t.addDirectory(sDirectory);
+        String entry = "tree : " + sTree + " : " + sDirectory;
+        if (!this.aEntries.contains(entry)) 
+            this.aEntries.add(entry);
+        writeToIndex(); 
+    }
+
+    public void clearIndex() throws Exception {
+        Utils.writeFile("index", "");
+        this.aEntries = new ArrayList<String>();
     }
 
     public void writeToIndex() throws Exception {
-        PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("index")));
-        for (String sFileName: hm.keySet()) {
-            String sHash = hm.get(sFileName);
-            writer.println(sFileName + " : " + sHash);
+        String sIndex = "";
+        for (int i=0; i<this.aEntries.size(); i++) {
+            sIndex += aEntries.get(i) + "\n";
         }
-        writer.close();
+        Utils.writeFile("index", sIndex.trim());
+    }
+
+    public void deleteFile(String sPath) throws Exception {
+        this.aEntries.add("*deleted* " + sPath);
+    }
+
+    public void editFile(String sPath) throws Exception {
+        this.aEntries.add("*edited* " + sPath);
     }
 }

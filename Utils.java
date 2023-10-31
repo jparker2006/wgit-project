@@ -1,10 +1,15 @@
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Utils {
 
@@ -85,5 +90,28 @@ public class Utils {
         }
 
         Files.createDirectories(pathObject);
+    }
+
+    public static String getFirstWordOfString(String s) {
+        return s.substring(0, s.indexOf(" "));
+    }
+
+    public static String getLastWordOfString (String s) {
+        if (s == null || s .isEmpty())
+            return "";
+        String[] words = s.trim().split("\\s+");
+        return words[words.length - 1];
+    }
+
+
+    public static void removeLineInFile(String path, int line) throws Exception {
+        String sFile = readFile(path);
+        String[] list = sFile.split("\n");
+        String sOutput = "";
+        for (int i=0; i<list.length; i++) {
+            if (line != i)
+                sOutput += list[i] + "\n";
+        }
+        writeFile(path, sOutput.trim());
     }
 }
