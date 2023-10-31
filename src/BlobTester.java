@@ -11,7 +11,7 @@ public class BlobTester {
     static void beforeAll() throws Exception {
         Utils.deleteDirectory("objects");
         Utils.writeFile("Test.txt", "This is file contents.");
-        Blob blob = new Blob("Test.txt");
+        new Blob("Test.txt");
     }
 
     @AfterAll

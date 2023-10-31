@@ -15,10 +15,8 @@ public class Tree {
             if (map.containsKey(args[1])) return;
             map.put(args[1], sEntry);
         }
-        else if (args.length == 1) { // edit or deletion
-            System.out.println("Here");
+        else if (args.length == 1) // edit or deletion
             map.put("CHANGE_KEY", sEntry);
-        }
         else if (!map.containsKey(args[2])) // blob
             map.put(args[2], sEntry);
     }
@@ -92,12 +90,33 @@ public class Tree {
             }
         }
         String sGrandparentsHash = sFile.split("\n")[1];
-        if (sGrandparentsHash.isEmpty()) {
+        if (sGrandparentsHash.isEmpty())
             return;
-        }
         delete(sPath, sGrandparentsHash);
     }
 
-    public void edit(String sPath) {
+    public void edit(String sPath, String sParentHash) throws Exception {
+        String sFile = Utils.readFile("objects/" + sParentHash);
+        String sParentsIndexTree = sFile.split("\n")[0];
+        String sParentsTreeContents = Utils.readFile("objects/" + sParentsIndexTree);
+        String[] aParentsPaths = sParentsTreeContents.split("\n");
+        for (int i=0; i<aParentsPaths.length; i++) {
+            String sType = Utils.getFirstWordOfString(aParentsPaths[i]);
+            if (sType.equals("blob")) {
+                String sFileName = Utils.getLastWordOfString(aParentsPaths[i]);
+                if (sFileName.equals(sPath)) {
+                    Utils.removeLineInFile("objects/" + sParentsIndexTree, i);
+                    add("*edited* " + sPath);
+                    return;
+                }
+            }
+            else if (sType.equals("tree")) {
+                // search directory
+            }
+        }
+        String sGrandparentsHash = sFile.split("\n")[1];
+        if (sGrandparentsHash.isEmpty())
+            return;
+        edit(sPath, sGrandparentsHash);
     }
 }

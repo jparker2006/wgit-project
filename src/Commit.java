@@ -1,5 +1,4 @@
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 
 public class Commit {
@@ -53,11 +52,10 @@ public class Commit {
                 tree.add(aEntries[i]);
             else if (sType.equals("tree"))
                 tree.addDirectory(Utils.getLastWordOfString(aEntries[i]));
-            else if (sType.equals("*deleted*")) {
+            else if (sType.equals("*deleted*"))
                 tree.delete(aEntries[i].split(" ")[1], this.sParentSha);
-            }
             else if (sType.equals("*edited*"))
-                tree.edit(aEntries[i]);
+                tree.edit(aEntries[i].split(" ")[1], this.sParentSha);
         }
         tree.toFile();
         return Utils.hashString(tree.stringify());

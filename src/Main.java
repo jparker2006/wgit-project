@@ -2,15 +2,11 @@ public class Main {
     public static void main(String[] args) {
         System.out.println();
         try {
-            // Git git = new Git();
-            // git.initialize();
-
             deleteAll();
             runFirst2Commits();
             addDeleteFile2ToIndex();
             commitDeletingFile2();
-
-
+            
             Git git = new Git();
             git.initialize();
             git.addBlob("file5.txt");
@@ -77,7 +73,9 @@ public class Main {
         Utils.deleteFile("file6.txt");
         Utils.deleteFile("file7.txt");
         Utils.deleteFile("file8.txt");
+        Utils.deleteFile("file9.txt");
         Utils.deleteDirectory("dir");
+        Utils.deleteDirectory("dir2");
         Utils.deleteDirectory("objects");
         Utils.deleteFile("index");   
     }
